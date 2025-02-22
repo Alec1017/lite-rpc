@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  lite-rpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.lite-rpc
+    ports:
+      - "8890:8890"  # HTTP port
+      - "8891:8891"  # WebSocket port
+    env_file:
+      - .env
+    environment:
+      - LITE_RPC_HTTP_ADDR=[::]:8890
+      - LITE_RPC_WS_ADDR=[::]:8891
+      - QUIC_PROXY_ADDR=quic-proxy:11111
+    depends_on:
+      - quic-proxy
+
+  quic-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.quic-proxy
+    ports:
+      - "11111:11111"

@@ -1,0 +1,32 @@
+# syntax = docker/dockerfile:1.2
+FROM rust:1.81.0-slim as builder
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    pkg-config \
+    libssl-dev \
+    g++ \
+    cmake \
+    make \
+    protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and build the application
+COPY . .
+RUN cargo build --release --bin lite-rpc
+
+# Create the runtime image
+FROM debian:bookworm-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/lite-rpc /usr/local/bin/
+COPY openssl-legacy.cnf /etc/ssl/openssl-legacy.cnf
+
+ENV OPENSSL_CONF=/etc/ssl/openssl-legacy.cnf
+CMD ["lite-rpc"] 
